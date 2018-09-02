@@ -25,8 +25,8 @@ const char *password = "12345678";
 float temperatura;
 char mensagem [100];
 int isterese = 4;
-const char *novaRede;
-const char *novaSenha;
+char novaRede;
+char novaSenha;
 float setpoint = 25;
 int estado = 0;
 String Status = "Ar Desligado";
@@ -105,7 +105,7 @@ void setup()
 
     //CONECTA A REDE WIFI
     WiFi.mode(WIFI_STA);
-    WiFi.begin(novaRede, novaSenha);
+    WiFi.begin("Lorenzon", "piacentidez");
 
     while (WiFi.status() != WL_CONNECTED) {
       delay(500);
@@ -221,8 +221,6 @@ void salvar () {
 
   //Salva os dados na memória EEPROM
   EEPROM.begin(MEM_ALOC_SIZE);
-
-  
   EEPROM.write(0, novaRede);
   EEPROM.write(1, novaSenha);
   EEPROM.write(2, setpoint);

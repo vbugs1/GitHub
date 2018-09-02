@@ -1,6 +1,32 @@
-//Projeto_NodeMCU_1
-//Univates_2018_2_Vicente_Mauricio
-//Sistemas_Microprocessados_Avançados_Dispositivos_para automação_residencial
+#include <ESP8266WiFi.h>
+#include <WiFiClient.h>
+#include <ESP8266WebServer.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <EEPROM.h>
+#define MEM_ALOC_SIZE 64
+#include <PubSubClient.h>
+//#include <IRsend.h>
+
+ESP8266WebServer server(80);
+
+float temperatura;
+char mensagem [100];
+char setpoint = 27;
+char novaRede;
+char novaSenha;
+
+const char* BROKER_MQTT = "m10.cloudmqtt.com"; // ip/host do broker
+int BROKER_PORT = 15557; // porta do broker
+const char *BROKER_USER = "fvhdnjss";
+const char *BROKER_PASSWORD = "HWW0wyt9laS-";
+
+/*---------------------------------------------------------------------------*/
+/*prototypes*/
+void initPins();
+void initSerial();
+void initWiFi();
+void initMQTT();
 void setup();
 void setup_configuracao();
 void configura ();

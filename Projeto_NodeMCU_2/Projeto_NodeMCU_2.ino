@@ -1,3 +1,6 @@
+//Projeto_NodeMCU_2
+//Univates_2018_2_Vicente_Mauricio
+//Sistemas_Microprocessados_Avançados_Dispositivos_para automação_residencial
 #include <ESP8266WiFi.h>
 #include <WiFiClient.h>
 #include <ESP8266WebServer.h>
@@ -21,20 +24,13 @@ int BROKER_PORT = 15557; // porta do broker
 const char *BROKER_USER = "fvhdnjss";
 const char *BROKER_PASSWORD = "HWW0wyt9laS-";
 
-/*---------------------------------------------------------------------------*/
-/*prototypes*/
+// prototypes
 void initPins();
 void initSerial();
 void initWiFi();
 void initMQTT();
-void setup();
 void setup_configuracao();
-void configura ();
-void salvar ();
 void setup_operacao();
-void callback(char* topic, byte* payload, unsigned int length);
-void loop_operacao();
-void loop();
 void liga();
 void desliga();
 
@@ -44,6 +40,7 @@ void desliga();
 WiFiClient microsavancados;
 PubSubClient client(microsavancados);
 
+
 /*---------------------------------------------------------------------------*/
 /*SETUP*/
 
@@ -51,7 +48,7 @@ void setup()
 {
   // IRsend irsend(4)
   pinMode (D1, INPUT);
-  pinMode (A0, INPUT);
+  pinMode (D2, OUTPUT);
 
   delay(1000);
   Serial.begin(115200);
@@ -59,10 +56,11 @@ void setup()
 
 
   if (digitalRead(D1) == 1) {
-    Serial.println("Configuração");     //Cria rede para configurar conexão no IP 192.168.
+    //CRIA REDE
+    Serial.println("Configuração");
     setup_configuracao ();
   } else {
-    Serial.println("Operação");        //Conecta na rede configurada
+    Serial.println("Operação");
     setup_operacao();
   }
 }
@@ -72,7 +70,7 @@ void setup()
 
 void setup_configuracao () {
 
-  const char *ssid = "micros_1_A";
+  const char *ssid = "micros_1_B";
   const char *password = "12345678";
 
   Serial.print("Configuring access point...");
@@ -173,61 +171,44 @@ void setup_operacao() {
 
     }
   }
-
-  client.subscribe("temperatura");
-  client.subscribe("setpoint");
-
 }
 
-/*---------------------------------------------------------------------------*/
-/*Fução placa MCU2 para controle da saída D1*/
+
 void callback(char* topic, byte* payload, unsigned int length) {
 
   Serial.print("Message arrived in topic: ");
   Serial.println(topic);
+  int temp_ambiente = (int)topic;
+  int set = (int)setpoint;
 
-  int i;
-  char value[100];
-
-  Serial.print("Message:");
-  for (i = 0; i < length; i++) {
-    //Serial.print((char)payload[i]);
-    value[i] = (char)payload[i];
-  }
-  value[i] = '\0';
-
-  //if (topic == "temperatura") {
-  float temp = atof(value);    //converte uma cadeia de caracteres em um valor de ponto flutuante de precisão dupla.
-
-  Serial.print("TEMP: ");
-  Serial.println(temperatura);        // imprime temperatura serial
-  Serial.print("SETPOINT: ");
-  Serial.println(setpoint);
-
-  if (temp > setpoint) {
+  if (temp_ambiente > setpoint) {
     liga ();
   }
 
-  if (temp < setpoint)
+  if (temp_ambiente < setpoint)
   {
     desliga();
   }
 
+  Serial.print("Message:");
+  for (int i = 0; i < length; i++) {
+    Serial.print((char)payload[i]);
+  }
+
   Serial.println();
   Serial.println("-----------------------");
-  //}
+
 }
 
-/*---------------------------------------------------------------------------*/ //Medição temperatura MCU1
+/*---------------------------------------------------------------------------*/
 /*LOOP OPERAÇÃO*/
 
 void loop_operacao() {
 
+
   client.loop();
 
-  float temperatura = (analogRead(A0) * 330.0) / 1023.0;    //Lê pino A0 e converte mV para ºC
-  sprintf(mensagem, "%f", temperatura);       //converte valor de temperatura (float) to char
-  client.publish("temperatura", mensagem);    //publica na tag valor de temperatura para o servidor
+
   delay(2000);
 }
 
@@ -245,8 +226,6 @@ void loop() {
   }
 }
 
-/*---------------------------------------------------------------------------*/
-/*Fução placa MCU2 liga/desliga da saída D1*/
 void liga() {
   Serial.print("LIGA");/*
 

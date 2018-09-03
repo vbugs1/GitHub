@@ -67,7 +67,7 @@ void setup()
   pinMode (D1, INPUT);
   pinMode (A0, INPUT);
 
-  pinMode (D0, OUTPUT);   //PINO PARA TESTE
+  //pinMode (D2, OUTPUT);   //PINO PARA TESTE
 
 
   //Inicia o monitor serial

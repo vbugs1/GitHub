@@ -25,11 +25,22 @@ const char *password = "12345678";
 float temperatura;
 char mensagem [100];
 int isterese = 4;
-char novaRede;
-char novaSenha;
-float setpoint = 25;
+
+String novaRede;
+String novaSenha;
+String SetPointConfig;
+
 int estado = 0;
 String Status = "Ar Desligado";
+
+int SETPOINT;
+
+char rede[30];
+char senha[30];
+char sp[30];
+
+
+
 
 //Váriaveis do MQTT
 const char* BROKER_MQTT = "m10.cloudmqtt.com"; // ip/host do broker
@@ -50,9 +61,6 @@ void espaco();
 
 void setup()
 {
-
-
-
   // IRsend irsend(4)
 
   //Define entradas (D1 - modo oper.(L) conf. (H) && A0 - sensor de temperatura)
@@ -63,7 +71,7 @@ void setup()
   Serial.begin(115200);
   Serial.println();
   delay(1000);
-  
+
   espaco();
   Serial.println("Sistemas Microprocessados Avançados");
   Serial.println("Trabalho nota 1");
@@ -80,7 +88,7 @@ void setup()
     espaco();
 
     //Cria rede com parametros pré definidos
-    Serial.print("Configurando ponto de acesso...");
+    Serial.println("Configurando ponto de acesso...");
     WiFi.softAP(ssid, password);
     espaco();
 
@@ -92,6 +100,8 @@ void setup()
 
     //Se acessar tal IP - direciona para a rotina "CONFIGURA"
     server.on("/", configura);
+    server.on("/salvar", salvar);
+
     server.begin();
     Serial.println("Servidor iniciado");
     espaco();
@@ -103,9 +113,19 @@ void setup()
   else {
     Serial.println("MODO: operação");
 
+
+    EEPROM.get(0, rede);
+    Serial.print("Teste rede: ");
+    Serial.println(rede);
+
+    EEPROM.get(1, senha);
+    Serial.print("Teste senha: ");
+    Serial.println(senha);
+
+
     //CONECTA A REDE WIFI
     WiFi.mode(WIFI_STA);
-    WiFi.begin("Lorenzon", "piacentidez");
+    WiFi.begin(rede, senha);
 
     while (WiFi.status() != WL_CONNECTED) {
       delay(500);
@@ -209,22 +229,51 @@ void configura () {
 
 void salvar () {
 
-  //Apresenta os dados informados
-  Serial.println("Nome da rede: ");
-  Serial.print(novaRede);
-  Serial.println("Senha: ");
-  Serial.print(novaSenha);
-  Serial.println("SetPoint: ");
-  Serial.print(setpoint);
 
-  server.send(200, "text/html", "<p>ok, senha salva</p>");
+  novaRede = server.arg("NomeRede");
+  novaSenha = server.arg("SenhaRede");
+  SetPointConfig = server.arg("SetPoint");
+
+  //Apresenta os dados informados
+  Serial.print("Nome da rede: ");
+  Serial.println(novaRede);
+  Serial.print("Senha: ");
+  Serial.println(novaSenha);
+  Serial.print("SetPoint: ");
+  Serial.println(SetPointConfig);
 
   //Salva os dados na memória EEPROM
+  novaRede.toCharArray (rede, 30);
+  novaSenha.toCharArray(senha, 30);
+  SetPointConfig.toCharArray(sp, 30);
+
   EEPROM.begin(MEM_ALOC_SIZE);
-  EEPROM.write(0, novaRede);
-  EEPROM.write(1, novaSenha);
-  EEPROM.write(2, setpoint);
+  EEPROM.put(0, rede);
+  EEPROM.put(1, senha);
+  EEPROM.put(2, sp);
   EEPROM.end();
+
+  EEPROM.begin(MEM_ALOC_SIZE);
+
+  EEPROM.get(0, rede);
+  Serial.print("Teste rede: ");
+  Serial.println(rede);
+
+  EEPROM.get(1, senha);
+  Serial.print("Teste senha: ");
+  Serial.println(senha);
+
+  EEPROM.get(2, sp);
+  Serial.print("Teste se point: ");
+  Serial.println(sp);
+
+  EEPROM.end();
+
+
+  SETPOINT = (SetPointConfig).toInt();
+
+  server.send(200, "text/html", "<p>Dados salvos com sucesso</p>");
+
 }
 
 
@@ -245,12 +294,19 @@ void callback(char* topic, byte* payload, unsigned int length) {
 
   //Verifica se valor recebido é de setpoint
   if (strcmp(topic, "setpoint") == 0 ) {
-    setpoint = atof(value);                                    //converte char para float e salva valor em 'setpoint'
 
+    SetPointConfig = atof(value);                                    //converte char para float e salva valor em 'setpoint'
+    /* SetPointConfig = (SetP).toInt();
+
+      //Salva os dados na memória EEPROM
+      EEPROM.begin(MEM_ALOC_SIZE);
+      EEPROM.write(2, SetPointConfig);
+      EEPROM.end();
+    */
     //Apresenta novo valor de set point
     espaco();
     Serial.print("Novo SETPOINT: ");
-    Serial.println(setpoint);
+    Serial.println(SetPointConfig);
     espaco();
   }
 
@@ -260,20 +316,21 @@ void callback(char* topic, byte* payload, unsigned int length) {
 
     //Apresenta valor de temperatura recebido
     Serial.print("SetPoint: ");
-    Serial.println(setpoint);
+    Serial.println(SetPointConfig);
     Serial.println("");
     Serial.print("Valor de temperatura recebido: ");
     Serial.println(temp);
 
     //Verifica se temperatura é maior que setpoint
-    if (temp > (setpoint + (isterese / 2)) && estado == 0) {
+
+    if (temp > (SETPOINT + (isterese / 2)) && estado == 0) {
       liga ();
       estado = 1;
       Status = "Ar ligado";
     }
 
     //Verifica se temperatura é maior que setpoint
-    if (temp < (setpoint - (isterese / 2)) && estado == 1) {
+    if (temp < (SETPOINT - (isterese / 2)) && estado == 1) {
       desliga();
       estado = 0;
       Status = "Ar desligado";
